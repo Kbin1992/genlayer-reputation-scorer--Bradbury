@@ -505,7 +505,8 @@
 <script>
   // ─── CONFIG ────────────────────────────────────────────────────────────────
   const CONTRACT_ADDRESS = "0xC98b670a84fa92301F898D74c32b08326F015F50";
-  const RPC_URL          = "https://rpc-bradbury.genlayer.com";
+  const GENLAYER_RPC     = "https://rpc-bradbury.genlayer.com";   // for gen_* reads
+  const CHAIN_RPC        = "https://rpc.testnet-chain.genlayer.com"; // for MetaMask wallet
   const CHAIN_ID         = 4221;
   const CHAIN_ID_HEX     = "0x107D"; // 4221 in hex
   const POLL_INTERVAL_MS = 4000;
@@ -600,11 +601,11 @@
           await window.ethereum.request({
             method: 'wallet_addEthereumChain',
             params: [{
-              chainId:         CHAIN_ID_HEX,
-              chainName:       'GenLayer Bradbury Testnet',
-              nativeCurrency:  { name: 'GEN', symbol: 'GEN', decimals: 18 },
-              rpcUrls:         [RPC_URL],
-              blockExplorerUrls: ['https://explorer-bradbury.genlayer.com']
+              chainId:           CHAIN_ID_HEX,
+              chainName:         'GenLayer Bradbury Testnet',
+              nativeCurrency:    { name: 'GEN', symbol: 'GEN', decimals: 18 },
+              rpcUrls:           [CHAIN_RPC],
+              blockExplorerUrls: ['https://explorer.testnet-chain.genlayer.com']
             }]
           });
         } else {
@@ -636,7 +637,7 @@
 
   // ─── RPC CALL (read-only, via fetch) ──────────────────────────────────────
   async function rpcCall(method, params) {
-    const res = await fetch(RPC_URL, {
+    const res = await fetch(GENLAYER_RPC, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ jsonrpc: '2.0', id: 1, method, params })
