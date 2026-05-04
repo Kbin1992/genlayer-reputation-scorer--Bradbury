@@ -8,10 +8,9 @@ Submit any claim with optional evidence URL — 5 independent AI validators fetc
 
 ## Live Demo
 
-- **Frontend:** [Your Vercel Link Here]
+- **Frontend:** https://genlayer-reputation-scorer.vercel.app/
 - **Contract:** 0xC98b670a84fa92301F898D74c32b08326F015F50
 - **Network:** GenLayer Bradbury Testnet
-- **Demo Video:** [Your Loom Link Here]
 
 ---
 
