@@ -1,9 +1,13 @@
 # 🧠 OnChain AI Reputation Scorer
 ### Built on GenLayer Bradbury Testnet
 
-A decentralized reputation system powered by GenLayer Intelligent Contracts.  
-Submit any claim with optional evidence URL — 5 independent AI validators fetch live web data, analyze credibility, and score 0–100 permanently on-chain. No centralized authority. No oracle needed.
+This project demonstrates how GenLayer enables AI-powered decision-making on-chain.
 
+I built a reputation scoring system where users submit claims and supporting evidence, and an AI evaluates credibility.
+
+The result is validated using GenLayer’s Equivalence Principle and Optimistic Democracy Consensus, ensuring multiple validators agree on the outcome.
+
+This showcases a new class of applications: trustless reputation systems powered by AI.
 ---
 
 ## Live Demo
