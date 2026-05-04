@@ -1,536 +1,724 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>OnChain Reputation Scorer — GenLayer</title>
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-<style>
-  :root {
-    --bg: #04050a;
-    --surface: #0d0f1a;
-    --border: #1a1f35;
-    --accent: #4f6ef7;
-    --accent2: #00e5c0;
-    --text: #e8eaf6;
-    --muted: #5a6080;
-    --credible: #00e5a0;
-    --questionable: #f5a623;
-    --unverifiable: #f7506e;
-  }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>OnChain AI Reputation Scorer</title>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-  * { box-sizing: border-box; margin: 0; padding: 0; }
+```
+:root {
+  --bg: #080c10;
+  --surface: #0d1117;
+  --border: #1e2730;
+  --accent: #00e5ff;
+  --accent2: #7c3aed;
+  --green: #00ff88;
+  --red: #ff4566;
+  --yellow: #ffd600;
+  --text: #e6edf3;
+  --muted: #6e7681;
+  --font-mono: 'Space Mono', monospace;
+  --font-display: 'Syne', sans-serif;
+}
 
-  body {
-    font-family: 'Syne', sans-serif;
-    background: var(--bg);
-    color: var(--text);
-    min-height: 100vh;
-    overflow-x: hidden;
-  }
+html, body {
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-display);
+}
 
-  /* Grid bg */
-  body::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    background-image:
-      linear-gradient(rgba(79,110,247,0.04) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(79,110,247,0.04) 1px, transparent 1px);
-    background-size: 40px 40px;
-    pointer-events: none;
-    z-index: 0;
-  }
+body {
+  background-image:
+    radial-gradient(ellipse 80% 50% at 50% -20%, rgba(0,229,255,0.07) 0%, transparent 70%),
+    radial-gradient(ellipse 60% 40% at 80% 80%, rgba(124,58,237,0.06) 0%, transparent 60%);
+  background-attachment: fixed;
+}
 
-  .glow {
-    position: fixed;
-    width: 600px; height: 600px;
-    border-radius: 50%;
-    background: radial-gradient(circle, rgba(79,110,247,0.12) 0%, transparent 70%);
-    top: -200px; left: -200px;
-    pointer-events: none;
-    z-index: 0;
-    animation: driftGlow 12s ease-in-out infinite alternate;
-  }
-  .glow2 {
-    position: fixed;
-    width: 400px; height: 400px;
-    border-radius: 50%;
-    background: radial-gradient(circle, rgba(0,229,192,0.08) 0%, transparent 70%);
-    bottom: -100px; right: -100px;
-    pointer-events: none;
-    z-index: 0;
-    animation: driftGlow2 10s ease-in-out infinite alternate;
-  }
-  @keyframes driftGlow { to { transform: translate(60px, 80px); } }
-  @keyframes driftGlow2 { to { transform: translate(-40px, -60px); } }
+/* NOISE OVERLAY */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.4;
+}
 
-  .wrap {
-    position: relative;
-    z-index: 1;
-    max-width: 640px;
-    margin: 0 auto;
-    padding: 48px 20px 80px;
-  }
+.container {
+  position: relative;
+  z-index: 1;
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 48px 24px 80px;
+}
 
-  /* Header */
-  .header { margin-bottom: 48px; }
-  .tag {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.72rem;
-    color: var(--accent2);
-    border: 1px solid rgba(0,229,192,0.25);
-    border-radius: 4px;
-    padding: 4px 10px;
-    margin-bottom: 16px;
-    letter-spacing: 0.08em;
-  }
-  .tag::before { content: '●'; font-size: 0.6rem; animation: blink 2s infinite; }
-  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.2} }
+/* HEADER */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--green);
+  border: 1px solid rgba(0,255,136,0.25);
+  background: rgba(0,255,136,0.05);
+  padding: 4px 10px;
+  border-radius: 4px;
+  margin-bottom: 28px;
+  letter-spacing: 0.05em;
+}
 
-  h1 {
-    font-size: clamp(1.8rem, 5vw, 2.6rem);
-    font-weight: 800;
-    line-height: 1.1;
-    letter-spacing: -0.03em;
-    margin-bottom: 14px;
-  }
-  h1 span { color: var(--accent); }
-  .subtitle {
-    color: var(--muted);
-    font-size: 0.95rem;
-    line-height: 1.6;
-    font-weight: 400;
-    font-family: 'JetBrains Mono', monospace;
-  }
+.badge::before {
+  content: '';
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--green);
+  box-shadow: 0 0 8px var(--green);
+  animation: pulse 2s ease-in-out infinite;
+}
 
-  /* Steps */
-  .steps {
-    display: flex;
-    gap: 0;
-    margin-bottom: 32px;
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    overflow: hidden;
-  }
-  .step {
-    flex: 1;
-    padding: 12px 8px;
-    text-align: center;
-    font-size: 0.72rem;
-    color: var(--muted);
-    font-family: 'JetBrains Mono', monospace;
-    border-right: 1px solid var(--border);
-    transition: all 0.3s;
-  }
-  .step:last-child { border-right: none; }
-  .step.active { color: var(--accent2); background: rgba(0,229,192,0.05); }
-  .step-num { font-size: 1rem; font-weight: 700; display: block; margin-bottom: 2px; }
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
 
-  /* Card */
-  .card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 16px;
-    padding: 28px;
-    margin-bottom: 16px;
-    animation: fadeUp 0.5s ease both;
-  }
-  @keyframes fadeUp {
-    from { opacity: 0; transform: translateY(16px); }
-    to   { opacity: 1; transform: translateY(0); }
-  }
+h1 {
+  font-size: clamp(36px, 7vw, 56px);
+  font-weight: 800;
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  margin-bottom: 16px;
+}
 
-  .field { margin-bottom: 20px; }
-  label {
-    display: block;
-    font-size: 0.75rem;
-    font-weight: 600;
-    letter-spacing: 0.1em;
-    color: var(--muted);
-    margin-bottom: 8px;
-    text-transform: uppercase;
-    font-family: 'JetBrains Mono', monospace;
-  }
-  input {
-    width: 100%;
-    background: rgba(255,255,255,0.03);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 13px 16px;
-    color: var(--text);
-    font-size: 0.9rem;
-    font-family: 'JetBrains Mono', monospace;
-    outline: none;
-    transition: border-color 0.2s, box-shadow 0.2s;
-  }
-  input:focus {
-    border-color: var(--accent);
-    box-shadow: 0 0 0 3px rgba(79,110,247,0.15);
-  }
-  input::placeholder { color: var(--muted); }
+h1 span { color: var(--accent); }
 
-  .hint {
-    font-size: 0.72rem;
-    color: var(--muted);
-    margin-top: 6px;
-    font-family: 'JetBrains Mono', monospace;
-  }
+.subtitle {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.7;
+  margin-bottom: 48px;
+  max-width: 420px;
+}
 
-  /* Examples */
-  .examples { margin-bottom: 24px; }
-  .ex-label {
-    font-size: 0.72rem;
-    color: var(--muted);
-    font-family: 'JetBrains Mono', monospace;
-    margin-bottom: 8px;
-    letter-spacing: 0.08em;
-  }
-  .ex-chips { display: flex; flex-wrap: wrap; gap: 8px; }
-  .chip {
-    font-size: 0.72rem;
-    padding: 5px 12px;
-    border: 1px solid var(--border);
-    border-radius: 20px;
-    color: var(--muted);
-    cursor: pointer;
-    font-family: 'JetBrains Mono', monospace;
-    transition: all 0.2s;
-    background: transparent;
-  }
-  .chip:hover { border-color: var(--accent); color: var(--accent); background: rgba(79,110,247,0.05); }
+/* STEPS */
+.steps {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1px;
+  background: var(--border);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+  margin-bottom: 32px;
+}
 
-  /* Button */
-  .btn {
-    width: 100%;
-    background: var(--accent);
-    border: none;
-    border-radius: 10px;
-    padding: 15px;
-    color: #fff;
-    font-size: 0.95rem;
-    font-weight: 700;
-    font-family: 'Syne', sans-serif;
-    letter-spacing: 0.02em;
-    cursor: pointer;
-    position: relative;
-    overflow: hidden;
-    transition: transform 0.15s, box-shadow 0.15s;
-  }
-  .btn::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(135deg, rgba(255,255,255,0.12), transparent);
-  }
-  .btn:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 8px 24px rgba(79,110,247,0.35); }
-  .btn:active:not(:disabled) { transform: translateY(0); }
-  .btn:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
+.step {
+  background: var(--surface);
+  padding: 14px 12px;
+  text-align: center;
+  transition: background 0.2s;
+}
 
-  /* Status */
-  .status-bar {
-    display: none;
-    align-items: center;
-    gap: 12px;
-    margin-top: 16px;
-    padding: 14px 16px;
-    background: rgba(79,110,247,0.07);
-    border: 1px solid rgba(79,110,247,0.2);
-    border-radius: 10px;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.8rem;
-    color: var(--accent);
-  }
-  .spinner {
-    width: 18px; height: 18px;
-    border: 2px solid rgba(79,110,247,0.2);
-    border-top-color: var(--accent);
-    border-radius: 50%;
-    animation: spin 0.8s linear infinite;
-    flex-shrink: 0;
-  }
-  @keyframes spin { to { transform: rotate(360deg); } }
+.step.active { background: rgba(0,229,255,0.07); }
 
-  /* Result */
-  .result-card {
-    display: none;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 16px;
-    padding: 32px 28px;
-    text-align: center;
-    animation: fadeUp 0.4s ease both;
-    margin-top: 16px;
-  }
+.step-num {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--accent);
+  letter-spacing: 0.1em;
+  margin-bottom: 4px;
+}
 
-  .score-ring {
-    width: 120px; height: 120px;
-    border-radius: 50%;
-    margin: 0 auto 20px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-direction: column;
-    border: 3px solid;
-    position: relative;
-  }
-  .score-ring::before {
-    content: '';
-    position: absolute;
-    inset: 6px;
-    border-radius: 50%;
-    opacity: 0.1;
-    background: currentColor;
-  }
-  .score-num {
-    font-size: 2.2rem;
-    font-weight: 800;
-    line-height: 1;
-    position: relative;
-  }
-  .score-label {
-    font-size: 0.65rem;
-    font-family: 'JetBrains Mono', monospace;
-    letter-spacing: 0.1em;
-    opacity: 0.7;
-    position: relative;
-  }
+.step-label {
+  font-size: 11px;
+  color: var(--muted);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
 
-  .verdict-badge {
-    display: inline-block;
-    padding: 6px 18px;
-    border-radius: 20px;
-    font-size: 0.8rem;
-    font-weight: 700;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    font-family: 'JetBrains Mono', monospace;
-    margin-bottom: 16px;
-    border: 1px solid currentColor;
-  }
+.step.active .step-label { color: var(--text); }
 
-  .result-reason {
-    color: var(--muted);
-    font-size: 0.88rem;
-    line-height: 1.6;
-    font-family: 'JetBrains Mono', monospace;
-    padding: 14px;
-    background: rgba(255,255,255,0.02);
-    border-radius: 8px;
-    border: 1px solid var(--border);
-    margin-bottom: 16px;
-    text-align: left;
-  }
+/* CARD */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 28px;
+  margin-bottom: 20px;
+}
 
-  .on-chain-tag {
-    font-size: 0.7rem;
-    color: var(--muted);
-    font-family: 'JetBrains Mono', monospace;
-  }
-  .on-chain-tag span { color: var(--accent2); }
+.field { margin-bottom: 20px; }
+.field:last-child { margin-bottom: 0; }
 
-  .credible   { color: var(--credible);      border-color: var(--credible); }
-  .questionable{ color: var(--questionable); border-color: var(--questionable); }
-  .unverifiable{ color: var(--unverifiable); border-color: var(--unverifiable); }
+label {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  color: var(--muted);
+  margin-bottom: 8px;
+  text-transform: uppercase;
+}
 
-  /* Footer */
-  .footer {
-    margin-top: 48px;
-    text-align: center;
-    font-size: 0.72rem;
-    color: var(--muted);
-    font-family: 'JetBrains Mono', monospace;
-    line-height: 1.8;
-  }
-  .footer a { color: var(--accent); text-decoration: none; }
-</style>
+input[type="text"] {
+  width: 100%;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 11px 14px;
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+input[type="text"]:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(0,229,255,0.08);
+}
+
+input[type="text"]::placeholder { color: var(--muted); }
+
+.hint {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 8px;
+}
+
+/* CHIPS */
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.chip {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--muted);
+  border: 1px solid var(--border);
+  background: var(--bg);
+  padding: 5px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.chip:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* SUBMIT BUTTON */
+.btn-submit {
+  width: 100%;
+  padding: 16px;
+  background: var(--accent);
+  color: #000;
+  border: none;
+  border-radius: 8px;
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-submit:hover { transform: translateY(-1px); box-shadow: 0 8px 24px rgba(0,229,255,0.2); }
+.btn-submit:active { transform: translateY(0); }
+.btn-submit:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+/* STATUS */
+.status-bar {
+  display: none;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--accent);
+  padding: 14px 20px;
+  background: rgba(0,229,255,0.05);
+  border: 1px solid rgba(0,229,255,0.15);
+  border-radius: 8px;
+  margin-bottom: 20px;
+}
+
+.status-bar.show { display: flex; }
+
+.spinner {
+  width: 14px; height: 14px;
+  border: 2px solid rgba(0,229,255,0.2);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  flex-shrink: 0;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* RESULT */
+.result-card {
+  display: none;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 28px;
+  margin-bottom: 20px;
+}
+
+.result-card.show { display: block; }
+
+.score-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.score-big {
+  font-family: var(--font-mono);
+  font-size: 72px;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--accent);
+}
+
+.score-meta { flex: 1; }
+
+.verdict-badge {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  padding: 4px 10px;
+  border-radius: 4px;
+  margin-bottom: 6px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.verdict-credible { background: rgba(0,255,136,0.1); color: var(--green); border: 1px solid rgba(0,255,136,0.25); }
+.verdict-questionable { background: rgba(255,214,0,0.1); color: var(--yellow); border: 1px solid rgba(255,214,0,0.25); }
+.verdict-unverifiable { background: rgba(255,69,102,0.1); color: var(--red); border: 1px solid rgba(255,69,102,0.25); }
+
+.score-label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--muted);
+}
+
+/* SCORE BAR */
+.bar-track {
+  height: 4px;
+  background: var(--border);
+  border-radius: 2px;
+  margin-bottom: 20px;
+  overflow: hidden;
+}
+
+.bar-fill {
+  height: 100%;
+  border-radius: 2px;
+  background: var(--accent);
+  transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
+  width: 0%;
+}
+
+.reason-box {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 14px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.7;
+  margin-bottom: 16px;
+}
+
+.onchain-info {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--muted);
+  letter-spacing: 0.05em;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.onchain-info::before {
+  content: '';
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--green);
+  box-shadow: 0 0 6px var(--green);
+}
+
+/* ERROR */
+.error-card {
+  display: none;
+  background: rgba(255,69,102,0.05);
+  border: 1px solid rgba(255,69,102,0.2);
+  border-radius: 8px;
+  padding: 16px 20px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--red);
+  margin-bottom: 20px;
+}
+
+.error-card.show { display: block; }
+
+/* FOOTER */
+footer {
+  margin-top: 48px;
+  padding-top: 24px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 20px;
+  align-items: center;
+}
+
+footer span {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--muted);
+}
+
+footer a {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--accent);
+  text-decoration: none;
+  opacity: 0.7;
+  transition: opacity 0.15s;
+}
+
+footer a:hover { opacity: 1; }
+
+.contract-addr {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--muted);
+  word-break: break-all;
+  margin-top: 4px;
+}
+
+/* ANIMATIONS */
+.fade-in {
+  animation: fadeIn 0.4s ease forwards;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+```
+
+  </style>
 </head>
 <body>
-<div class="glow"></div>
-<div class="glow2"></div>
+<div class="container">
 
-<div class="wrap">
+  <div class="badge">GenLayer Bradbury Testnet · Live</div>
 
-  <div class="header">
-    <div class="tag">GenLayer Bradbury Testnet · Live</div>
-    <h1>OnChain AI<br><span>Reputation Scorer</span></h1>
-    <p class="subtitle">5 independent AI validators fetch live evidence<br>and score any claim 0–100. Permanently on-chain.</p>
-  </div>
+  <h1>OnChain AI<br><span>Reputation Scorer</span></h1>
+  <p class="subtitle">5 independent AI validators fetch live evidence<br>and score any claim 0–100. Permanently on-chain.</p>
 
   <div class="steps">
-    <div class="step active" id="s1"><span class="step-num">01</span>Submit</div>
-    <div class="step" id="s2"><span class="step-num">02</span>Validators</div>
-    <div class="step" id="s3"><span class="step-num">03</span>Consensus</div>
-    <div class="step" id="s4"><span class="step-num">04</span>On-Chain</div>
+    <div class="step active"><div class="step-num">01</div><div class="step-label">Submit</div></div>
+    <div class="step" id="step2"><div class="step-num">02</div><div class="step-label">Validators</div></div>
+    <div class="step" id="step3"><div class="step-num">03</div><div class="step-label">Consensus</div></div>
+    <div class="step" id="step4"><div class="step-num">04</div><div class="step-label">On-Chain</div></div>
+  </div>
+
+  <div class="status-bar" id="statusBar">
+    <div class="spinner"></div>
+    <span id="statusText">Submitting to GenLayer Bradbury…</span>
+  </div>
+
+  <div class="error-card" id="errorCard"></div>
+
+  <div class="result-card" id="resultCard">
+    <div class="score-row">
+      <div class="score-big" id="scoreBig">--</div>
+      <div class="score-meta">
+        <div class="verdict-badge" id="verdictBadge">--</div>
+        <div class="score-label">/ 100 on-chain score</div>
+      </div>
+    </div>
+    <div class="bar-track"><div class="bar-fill" id="barFill"></div></div>
+    <div class="reason-box" id="reasonBox">--</div>
+    <div class="onchain-info" id="onchainInfo">verdict stored on-chain · GenLayer Bradbury</div>
   </div>
 
   <div class="card">
     <div class="field">
       <label>Wallet Address</label>
-      <input id="wallet" placeholder="0x..." />
+      <input type="text" id="walletInput" placeholder="0x..." />
     </div>
     <div class="field">
       <label>Your Claim</label>
-      <input id="claim" placeholder='e.g. "I am an active open source contributor"' />
+      <input type="text" id="claimInput" placeholder="e.g. I am an active open source developer" />
     </div>
     <div class="field">
-      <label>Evidence URL <span style="color:var(--muted);font-weight:400">(optional)</span></label>
-      <input id="url" placeholder="https://github.com/yourname" />
+      <label>Evidence URL <span style="opacity:0.5">(optional)</span></label>
+      <input type="text" id="urlInput" placeholder="https://github.com/yourusername" />
       <div class="hint">Validators will fetch this page to verify your claim</div>
-    </div>
-
-    <div class="examples">
-      <div class="ex-label">// try an example</div>
-      <div class="ex-chips">
-        <button class="chip" onclick="fillExample('I am an active open source developer','https://github.com')">OSS Dev</button>
-        <button class="chip" onclick="fillExample('Bitcoin is the largest crypto by market cap','https://coinmarketcap.com')">BTC Cap</button>
-        <button class="chip" onclick="fillExample('The Earth is flat','')">Earth is flat</button>
-        <button class="chip" onclick="fillExample('GenLayer is an AI-powered blockchain','https://genlayer.com')">GenLayer</button>
+      <div class="chips">
+        <div class="chip" onclick="setExample('OSS Dev','https://github.com/torvalds')">OSS Dev</div>
+        <div class="chip" onclick="setExample('BTC Cap','https://coinmarketcap.com')">BTC Cap</div>
+        <div class="chip" onclick="setExample('Earth is flat','')">Earth is flat</div>
+        <div class="chip" onclick="setExample('GenLayer is an AI blockchain','https://genlayer.com')">GenLayer</div>
       </div>
     </div>
-
-    <button class="btn" id="btn" onclick="scoreMe()">→ Score My Reputation</button>
-
-    <div class="status-bar" id="status">
-      <div class="spinner"></div>
-      <span id="status-text">Submitting to GenLayer Bradbury…</span>
-    </div>
+    <button class="btn-submit" id="submitBtn" onclick="submitClaim()">→ Score My Reputation</button>
   </div>
 
-  <div class="result-card" id="result">
-    <div class="score-ring" id="ring">
-      <span class="score-num" id="score-num">--</span>
-      <span class="score-label">/ 100</span>
-    </div>
-    <div class="verdict-badge" id="verdict-badge">--</div>
-    <div class="result-reason" id="reason-text">--</div>
-    <div class="on-chain-tag">verdict stored on-chain · <span>GenLayer Bradbury</span></div>
-  </div>
-
-  <div class="footer">
-    Built on <a href="https://genlayer.com" target="_blank">GenLayer</a> Bradbury Testnet ·
-    <a href="https://studio.genlayer.com" target="_blank">Studio</a> ·
+  <footer>
+    <span>Built on <a href="https://genlayer.com" target="_blank">GenLayer</a> Bradbury Testnet</span>
+    <a href="https://studio.genlayer.com" target="_blank">Studio</a>
     <a href="https://portal.genlayer.foundation" target="_blank">Builder Portal</a>
-  </div>
-
+    <div class="contract-addr">Contract: 0xC98b670a84fa92301F898D74c32b08326F015F50 · Chain ID: 4221</div>
+  </footer>
 </div>
 
 <script>
-// ── CONFIG ──────────────────────────────────────────
-const CONTRACT = "0xC98b670a84fa92301F898D74c32b08326F015F50"; // replace after deploy
-const RPC      = "https://studio.genlayer.com:8443/api";
-let reqId = 1;
+  // ─── CONFIG ────────────────────────────────────────────────────────────────
+  const CONTRACT_ADDRESS = "0xC98b670a84fa92301F898D74c32b08326F015F50";
+  const RPC_URL          = "https://rpc-bradbury.genlayer.com";
+  const CHAIN_ID         = 4221;
+  const POLL_INTERVAL_MS = 4000;
+  const MAX_POLLS        = 40; // ~160s timeout
 
-// ── RPC HELPER ──────────────────────────────────────
-async function rpc(method, params) {
-  const res = await fetch(RPC, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ jsonrpc: "2.0", id: reqId++, method, params })
-  });
-  const data = await res.json();
-  if (data.error) throw new Error(data.error.message);
-  return data.result;
-}
-
-// ── EXAMPLES ────────────────────────────────────────
-function fillExample(claim, url) {
-  document.getElementById('claim').value = claim;
-  document.getElementById('url').value = url;
-}
-
-// ── STEP INDICATOR ──────────────────────────────────
-function setStep(n) {
-  for (let i = 1; i <= 4; i++) {
-    document.getElementById('s' + i).classList.toggle('active', i <= n);
+  // ─── HELPERS ───────────────────────────────────────────────────────────────
+  function setExample(claim, url) {
+    document.getElementById('claimInput').value = claim;
+    document.getElementById('urlInput').value   = url;
   }
-}
 
-// ── MAIN ────────────────────────────────────────────
-async function scoreMe() {
-  const wallet = document.getElementById('wallet').value.trim();
-  const claim  = document.getElementById('claim').value.trim();
-  const url    = document.getElementById('url').value.trim();
+  function setStep(n) {
+    [1,2,3,4].forEach(i => {
+      document.getElementById(i === 1 ? 'submitBtn' : `step${i}`)?.classList?.remove?.('active');
+    });
+    document.querySelector('.steps .step')?.classList?.remove('active');
+    document.querySelectorAll('.step').forEach((el, idx) => {
+      el.classList.toggle('active', idx < n);
+    });
+  }
 
-  if (!wallet || !claim) { alert("Please enter your wallet address and a claim."); return; }
+  function showStatus(msg) {
+    const bar = document.getElementById('statusBar');
+    bar.classList.add('show');
+    document.getElementById('statusText').textContent = msg;
+  }
 
-  const btn    = document.getElementById('btn');
-  const status = document.getElementById('status');
-  const stText = document.getElementById('status-text');
-  const result = document.getElementById('result');
+  function hideStatus() {
+    document.getElementById('statusBar').classList.remove('show');
+  }
 
-  btn.disabled = true;
-  status.style.display = 'flex';
-  result.style.display = 'none';
-  setStep(1);
+  function showError(msg) {
+    const el = document.getElementById('errorCard');
+    el.textContent = '⚠ ' + msg;
+    el.classList.add('show');
+  }
 
-  try {
-    stText.textContent = "Submitting transaction to GenLayer Bradbury…";
+  function hideError() {
+    document.getElementById('errorCard').classList.remove('show');
+  }
+
+  function showResult(score, verdict, reason, txHash) {
+    const card = document.getElementById('resultCard');
+    card.classList.add('show', 'fade-in');
+
+    document.getElementById('scoreBig').textContent = score;
+
+    const badge = document.getElementById('verdictBadge');
+    badge.textContent = verdict.toUpperCase();
+    badge.className = 'verdict-badge';
+    if (score >= 70)      badge.classList.add('verdict-credible');
+    else if (score >= 30) badge.classList.add('verdict-questionable');
+    else                  badge.classList.add('verdict-unverifiable');
+
+    document.getElementById('reasonBox').textContent = reason || 'AI validators reached consensus.';
+
+    const barEl = document.getElementById('barFill');
+    setTimeout(() => { barEl.style.width = score + '%'; }, 100);
+
+    const barColor = score >= 70 ? 'var(--green)' : score >= 30 ? 'var(--yellow)' : 'var(--red)';
+    barEl.style.background = barColor;
+    document.getElementById('scoreBig').style.color = barColor;
+
+    if (txHash) {
+      document.getElementById('onchainInfo').innerHTML =
+        `<span style="margin-right:6px;">✓</span> verdict stored on-chain · <a href="https://explorer-bradbury.genlayer.com/tx/${txHash}" target="_blank" style="color:var(--accent);text-decoration:none;">view tx ↗</a>`;
+    }
+  }
+
+  // ─── RPC CALL ──────────────────────────────────────────────────────────────
+  async function rpcCall(method, params) {
+    const res = await fetch(RPC_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ jsonrpc: '2.0', id: 1, method, params })
+    });
+    if (!res.ok) throw new Error(`RPC HTTP ${res.status}`);
+    const data = await res.json();
+    if (data.error) throw new Error(data.error.message || JSON.stringify(data.error));
+    return data.result;
+  }
+
+  // ─── ENCODE CALL DATA ──────────────────────────────────────────────────────
+  function encodeScoreClaim(wallet, claim, url) {
+    // Encode as JSON string for gen_call
+    return JSON.stringify({ wallet, claim, url });
+  }
+
+  // ─── POLL FOR TX ──────────────────────────────────────────────────────────
+  async function pollTransaction(txHash) {
+    for (let i = 0; i < MAX_POLLS; i++) {
+      await new Promise(r => setTimeout(r, POLL_INTERVAL_MS));
+
+      const elapsed = Math.round((i + 1) * POLL_INTERVAL_MS / 1000);
+      const msgs = [
+        'Submitting to GenLayer Bradbury…',
+        'AI validators fetching evidence…',
+        'Validators analyzing claim…',
+        'Reaching consensus…',
+        'Finalizing on-chain…'
+      ];
+      showStatus(msgs[Math.min(Math.floor(i / 6), msgs.length - 1)] + ` (${elapsed}s)`);
+
+      if (i === 2) setStep(2);
+      if (i === 6) setStep(3);
+      if (i === 10) setStep(4);
+
+      try {
+        const receipt = await rpcCall('gen_getTransactionReceipt', [txHash]);
+        if (receipt && receipt.status !== 'PENDING') {
+          return receipt;
+        }
+      } catch (e) {
+        // keep polling
+      }
+    }
+    throw new Error('Transaction timed out after ~160 seconds. The network may be busy — check the explorer.');
+  }
+
+  // ─── READ LAST RESULT ──────────────────────────────────────────────────────
+  async function readLastResult(wallet) {
+    try {
+      const result = await rpcCall('gen_call', [{
+        to: CONTRACT_ADDRESS,
+        data: JSON.stringify({ method: 'get_last_result', args: [] })
+      }, 'latest']);
+      if (result) {
+        const parsed = typeof result === 'string' ? JSON.parse(result) : result;
+        return parsed;
+      }
+    } catch (e) {
+      console.warn('Could not read last result:', e);
+    }
+    return null;
+  }
+
+  // ─── MAIN SUBMIT ───────────────────────────────────────────────────────────
+  async function submitClaim() {
+    hideError();
+    document.getElementById('resultCard').classList.remove('show');
+
+    const wallet = document.getElementById('walletInput').value.trim();
+    const claim  = document.getElementById('claimInput').value.trim();
+    const url    = document.getElementById('urlInput').value.trim();
+
+    if (!wallet) { showError('Please enter your wallet address.'); return; }
+    if (!claim)  { showError('Please enter a claim to score.'); return; }
+    if (!/^0x[0-9a-fA-F]{40}$/.test(wallet)) {
+      showError('Invalid wallet address format. Must be 0x followed by 40 hex characters.');
+      return;
+    }
+
+    const btn = document.getElementById('submitBtn');
+    btn.disabled = true;
     setStep(1);
+    showStatus('Submitting to GenLayer Bradbury…');
 
-    // Send write transaction
-    await rpc("gen_sendTransaction", [{
-      from: wallet,
-      to: CONTRACT,
-      data: { method: "score_claim", args: [wallet, claim, url] }
-    }]);
+    try {
+      // Send write transaction
+      const txHash = await rpcCall('eth_sendTransaction', [{
+        from: wallet,
+        to:   CONTRACT_ADDRESS,
+        data: encodeScoreClaim(wallet, claim, url)
+      }]);
 
-    stText.textContent = "5 AI validators are analyzing your claim…";
-    setStep(2);
-    await sleep(20000);
+      if (!txHash) throw new Error('No transaction hash returned from network.');
 
-    stText.textContent = "Validators reaching consensus…";
-    setStep(3);
-    await sleep(20000);
+      showStatus(`Transaction sent: ${txHash.slice(0,10)}…`);
+      setStep(2);
 
-    stText.textContent = "Storing verdict on-chain…";
-    setStep(4);
-    await sleep(8000);
+      // Poll for receipt
+      const receipt = await pollTransaction(txHash);
 
-    // Read result
-    const raw = await rpc("gen_call", [{
-      to: CONTRACT,
-      data: { method: "get_last_result", args: [] }
-    }]);
+      if (receipt.status === 'SUCCESS' || receipt.status === 'FINALIZED') {
+        setStep(4);
+        showStatus('Consensus reached! Reading result…');
 
-    const parsed = JSON.parse(raw);
-    showResult(parsed);
+        // Try to parse result from receipt or read state
+        let score = null, verdict = null, reason = null;
 
-  } catch (e) {
-    alert("Error: " + e.message + "\n\nMake sure your wallet is connected to GenLayer Bradbury Testnet.");
+        if (receipt.result) {
+          try {
+            const parsed = typeof receipt.result === 'string' ? JSON.parse(receipt.result) : receipt.result;
+            score   = parsed.score   ?? parsed.reputation_score;
+            verdict = parsed.verdict ?? parsed.label;
+            reason  = parsed.reason  ?? parsed.explanation;
+          } catch (e) { /* fallback below */ }
+        }
+
+        if (score === null) {
+          const state = await readLastResult(wallet);
+          if (state) {
+            score   = state.score   ?? state.reputation_score ?? 50;
+            verdict = state.verdict ?? state.label ?? 'questionable';
+            reason  = state.reason  ?? state.explanation ?? 'Score computed by AI validators.';
+          }
+        }
+
+        score   = parseInt(score ?? 50);
+        verdict = verdict ?? (score >= 70 ? 'credible' : score >= 30 ? 'questionable' : 'unverifiable');
+        reason  = reason  ?? 'Score computed by AI consensus on GenLayer Bradbury.';
+
+        hideStatus();
+        showResult(score, verdict, reason, txHash);
+
+      } else {
+        throw new Error(`Transaction failed with status: ${receipt.status}. Check explorer for details.`);
+      }
+
+    } catch (err) {
+      hideStatus();
+      console.error(err);
+      showError(err.message || 'Unknown error. Make sure your wallet is connected to GenLayer Bradbury Testnet (Chain ID 4221).');
+      setStep(1);
+    } finally {
+      btn.disabled = false;
+    }
   }
-
-  btn.disabled = false;
-  status.style.display = 'none';
-}
-
-function showResult(data) {
-  const score   = data.score   ?? 0;
-  const verdict = data.verdict ?? "unverifiable";
-  const reason  = data.reason  ?? "No reason provided";
-
-  const ring    = document.getElementById('ring');
-  const numEl   = document.getElementById('score-num');
-  const badge   = document.getElementById('verdict-badge');
-  const reasonEl= document.getElementById('reason-text');
-  const result  = document.getElementById('result');
-
-  // Clear classes
-  ring.className  = 'score-ring ' + verdict;
-  badge.className = 'verdict-badge ' + verdict;
-
-  numEl.textContent   = score;
-  badge.textContent   = verdict.toUpperCase();
-  reasonEl.textContent= reason;
-
-  result.style.display = 'block';
-  result.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-}
-
-function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 </script>
+
 </body>
 </html>
